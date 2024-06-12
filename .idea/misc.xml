@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Black">
+    <option name="sdkName" value="Python 3.11 (lightning_template)" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="arece_trajectory_planner_python_v3_10" project-jdk-type="Python SDK" />
+</project>
