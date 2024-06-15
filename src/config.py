@@ -6,11 +6,11 @@ from pydantic import BaseModel, ValidationError
 
 class WandbConfig(BaseModel):
     # api_key is handled in .env file, wandb automatically log if it is set
-    project: str = 'MLP'
+    project: str = 'StageING4'
 
 
 class DataModuleConfig(BaseModel):
-    batch_size: int = 512
+    batch_size: int = 16
     num_workers: int = 8
     persistent_workers: bool = True
     training_set_ratio: float = 0.8
@@ -18,7 +18,7 @@ class DataModuleConfig(BaseModel):
 
 class ModelConfig(BaseModel):
     learning_rate: float = 0.001
-    loss_function: str = 'HuberLoss'
+    loss_function: str = 'L1Loss'
     optimizer: str = 'NAdam'
 
 

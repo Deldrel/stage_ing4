@@ -7,20 +7,20 @@ import wandb
 from src.config import config
 from src.helpers.decorators import timer
 from .data_module import DataModule
-from .mlp import MLP
+from .gnn import GNN
 from .trainer import get_trainer
 
 
 class LightningManager:
     def __init__(self):
         self.data_module = None
-        self.mlp = None
+        self.model = None
         self.trainer = None
 
     @lru_cache(maxsize=1)
     def setup(self) -> None:
         self.data_module = DataModule()
-        self.mlp = MLP()
+        self.model = GNN(in_channels=4, hidden_channels=64, out_channels=4, num_layers=4)
         self.search_checkpoint()
         self.trainer = get_trainer()
 
@@ -35,7 +35,7 @@ class LightningManager:
         if input(f"Load {checkpoints[-1]}? [y/n]: ") == "y":
             try:
                 checkpoint = torch.load(checkpoints[-1])
-                self.mlp.load_state_dict(checkpoint)
+                self.model.load_state_dict(checkpoint)
             except Exception as e:
                 print(f"Error loading checkpoint: {e}, keeping new model.")
 
@@ -49,8 +49,8 @@ class LightningManager:
                        config=config.dump())
 
         print(f"NOTE: you can interrupt the training whenever you want with a keyboard interrupt (CTRL+C)")
-        self.trainer.fit(self.mlp, self.data_module)
-        self.trainer.test(self.mlp, self.data_module)
+        self.trainer.fit(self.model, self.data_module)
+        self.trainer.test(self.model, self.data_module)
 
         if config.trainer.log:
             wandb.finish()

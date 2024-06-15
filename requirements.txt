@@ -3,7 +3,9 @@ pydantic
 matplotlib
 numpy
 pandas
+pytables
 torch
+torch-geometric
 wandb
 lightning
 scikit-learn

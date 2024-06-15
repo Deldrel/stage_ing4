@@ -91,7 +91,7 @@ def load_csv_files(
         try:
             df = pd.read_csv(file)
             filename = file.name.split(".")[0]
-            setattr(df, "filename", filename)
+            df.filename = filename
             dataframes.append(df)
             successful_loads += 1
         except Exception as e:
@@ -134,7 +134,7 @@ def save_csv_files(
         filename = df.filename if hasattr(df, "filename") else f"{i:09d}"
         filename = f"{filename}.csv" if not filename.endswith(".csv") else filename
         try:
-            df.to_csv(path / filename, index=False)
+            df.to_csv(path / filename, index=True)
             successful_saves += 1
         except Exception as e:
             if verbose:
