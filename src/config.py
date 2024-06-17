@@ -4,6 +4,15 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
 
+class SequencerConfig(BaseModel):
+    crafted_path: str = 'data/crafted'
+    sequences_path: str = 'data/sequences'
+    train_ratio: float = 0.8
+    sequence_length: int = 12
+    time_of_day: bool = True
+    day_of_week: bool = True
+
+
 class WandbConfig(BaseModel):
     # api_key is handled in .env file, wandb automatically log if it is set
     project: str = 'StageING4'
@@ -58,7 +67,9 @@ class ReduceLROnPlateauConfig(BaseModel):
 class Config(BaseModel):
     seed: int = 42
     logdir: str = 'logs'
+    verbose: bool = True
 
+    sequencer: SequencerConfig = SequencerConfig()
     wandb: WandbConfig = WandbConfig()
     data_module: DataModuleConfig = DataModuleConfig()
     model: ModelConfig = ModelConfig()

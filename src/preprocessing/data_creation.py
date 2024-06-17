@@ -6,6 +6,7 @@ import pandas as pd
 
 from src.helpers.csv_file_manager import process_csv_files, save_csv_files
 from src.helpers.decorators import timer
+from src.config import config
 
 
 def craft_wheelchair_data(car_data: pd.DataFrame) -> pd.DataFrame:
@@ -40,12 +41,16 @@ def create_csv_files() -> None:
     save_dir = Path('data/crafted')
 
     car_data = pd.read_hdf(metr_la_path)
-    car_data, wheelchair_data = process_csv_files(craft_wheelchair_data, car_data, keep_originals=True, verbose=True)
+
+    # FIXME: Because of RAM issue, limit the number of rows
+    car_data = car_data.iloc[:5000]
+
+    car_data, wheelchair_data = process_csv_files(craft_wheelchair_data, car_data, keep_originals=True, verbose=config.verbose)
 
     car_data.filename = "car_data"
     wheelchair_data.filename = "wheelchair_data"
 
-    save_csv_files([car_data, wheelchair_data], save_dir, verbose=True)
+    save_csv_files([car_data, wheelchair_data], save_dir, verbose=config.verbose)
 
     with open(adj_mx_path, 'rb') as f:
         sensor_ids, sensor_id_to_ind, adj_mx = pickle.load(f)

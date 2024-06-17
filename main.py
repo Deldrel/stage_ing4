@@ -13,7 +13,7 @@ from src.preprocessing.visualizer import visualize
 def main() -> None:
     seed_everything(config.seed, workers=True)
     Menu({
-        "1": ("Create CSV files", create_csv_files),
+        "1": ("Craft new data", create_csv_files),
         "2": ("Visualize speed", visualize),
         "3": ("Create sequences", sequence),
         "4": ("Train model", lightning_manager.train_model)
