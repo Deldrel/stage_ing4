@@ -4,6 +4,15 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
 
+class AccessibilityConfig(BaseModel):
+    query_radius: int = 500
+    green_threshold: int = 6
+    orange_threshold: int = 3
+    score_yes = 3
+    score_limited = 2
+    score_no = 1
+
+
 class SequencerConfig(BaseModel):
     crafted_path: str = 'data/crafted'
     sequences_path: str = 'data/sequences'
@@ -69,6 +78,7 @@ class Config(BaseModel):
     logdir: str = 'logs'
     verbose: bool = True
 
+    accessibility: AccessibilityConfig = AccessibilityConfig()
     sequencer: SequencerConfig = SequencerConfig()
     wandb: WandbConfig = WandbConfig()
     data_module: DataModuleConfig = DataModuleConfig()

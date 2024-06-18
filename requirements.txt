@@ -1,3 +1,5 @@
+folium
+overpy
 python-dotenv
 pydantic
 matplotlib

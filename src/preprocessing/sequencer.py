@@ -4,9 +4,9 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
+from src.config import config
 from src.helpers.csv_file_manager import load_csv_files
 from src.helpers.decorators import timer
-from src.config import config
 
 
 def create_sequences(dfs: List[pd.DataFrame], verbose: bool = True) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -73,8 +73,9 @@ def create_sequences(dfs: List[pd.DataFrame], verbose: bool = True) -> List[Tupl
     return results
 
 
-def split_data(x: np.ndarray, y: np.ndarray, train_ratio: float = 0.8) -> Tuple[
-    np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def split_data(
+        x: np.ndarray, y: np.ndarray, train_ratio: float = 0.8
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     num_samples = x.shape[0]
     num_train = int(num_samples * train_ratio)
     num_val = (num_samples - num_train) // 2
