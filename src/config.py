@@ -6,11 +6,6 @@ from pydantic import BaseModel, ValidationError
 
 class AccessibilityConfig(BaseModel):
     query_radius: int = 500
-    green_threshold: int = 6
-    orange_threshold: int = 3
-    score_yes = 3
-    score_limited = 2
-    score_no = 1
 
 
 class SequencerConfig(BaseModel):
@@ -76,7 +71,7 @@ class ReduceLROnPlateauConfig(BaseModel):
 class Config(BaseModel):
     seed: int = 42
     logdir: str = 'logs'
-    verbose: bool = True
+    verbose: bool = False
 
     accessibility: AccessibilityConfig = AccessibilityConfig()
     sequencer: SequencerConfig = SequencerConfig()

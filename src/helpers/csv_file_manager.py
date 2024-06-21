@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Union
 
 import pandas as pd
+from tqdm import tqdm
 
 
 def process_csv_files(
@@ -32,17 +33,19 @@ def process_csv_files(
     if isinstance(dataframes, pd.DataFrame):
         dataframes = [dataframes]
 
-    if verbose:
-        print(f"Processing {len(dataframes)} DataFrames...")
-
     if parallel in ("thread", "process"):
         executor = ThreadPoolExecutor() if parallel == "thread" else ProcessPoolExecutor()
         if verbose:
             print(f"Using {parallel} parallelism")
         with executor as exe:
-            processed_dfs = list(exe.map(process_function, dataframes))
+            processed_dfs = list(tqdm(exe.map(process_function, dataframes),
+                                      total=len(dataframes),
+                                      desc=f"Processing {len(dataframes)} DataFrames",
+                                      disable=not verbose))
     else:
-        processed_dfs = [process_function(df) for df in dataframes]
+        processed_dfs = [process_function(df) for df in tqdm(dataframes,
+                                                             desc=f"Processing {len(dataframes)} DataFrames",
+                                                             disable=not verbose)]
 
     for df in processed_dfs:
         if hasattr(df, "filename"):
@@ -77,9 +80,6 @@ def load_csv_files(
     if not path.exists():
         raise FileNotFoundError(f"Path {path} does not exist")
 
-    if verbose:
-        print(f"Loading CSV files from {path}...")
-
     files = sorted(path.glob("*.csv"))
 
     if not files:
@@ -87,7 +87,7 @@ def load_csv_files(
 
     dataframes = []
     successful_loads = 0
-    for file in files:
+    for file in tqdm(files, desc=f"Loading CSV files from {path}", disable=not verbose):
         try:
             df = pd.read_csv(file)
             filename = file.name.split(".")[0]
@@ -123,14 +123,11 @@ def save_csv_files(
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
 
-    if verbose:
-        print(f"Saving CSV files to {path}...")
-
     if isinstance(dataframes, pd.DataFrame):
         dataframes = [dataframes]
 
     successful_saves = 0
-    for i, df in enumerate(dataframes):
+    for i, df in enumerate(tqdm(dataframes, desc=f"Saving CSV files to {path}", disable=not verbose)):
         filename = df.filename if hasattr(df, "filename") else f"{i:09d}"
         filename = f"{filename}.csv" if not filename.endswith(".csv") else filename
         try:
