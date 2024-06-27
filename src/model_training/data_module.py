@@ -9,36 +9,29 @@ from torch_geometric.loader import DataLoader
 from src.config import config
 
 
-class MyDataset(Dataset):
+class TrafficDataset(Dataset):
     def __init__(self, x, y, adj_matrix):
         super().__init__()
-        self.x = x
-        self.y = y
-        self.adj_matrix = adj_matrix
+        self.x = x  # Shape: (num_samples, sequence_length, num_nodes, num_features)
+        self.y = y  # Shape: same as x
+        self.adj_matrix = adj_matrix  # Shape: (num_nodes, num_nodes)
+
         self.num_samples = x.shape[0]
         self.num_nodes = adj_matrix.shape[0]
+
+        self.edge_index = np.array(np.nonzero(adj_matrix))
+        self.edge_index = np.stack(self.edge_index, axis=0)
+        self.edge_index = torch.tensor(self.edge_index, dtype=torch.long)
+        self.edge_attr = torch.tensor(adj_matrix[self.edge_index[0], self.edge_index[1]], dtype=torch.float)
 
     def __len__(self):
         return self.num_samples
 
     def __getitem__(self, idx):
-        x = torch.tensor(self.x[idx], dtype=torch.float)  # Shape: (12, 207, 4)
-        y = torch.tensor(self.y[idx], dtype=torch.float)  # Shape: (12, 207, 4)
+        x = torch.tensor(self.x[idx], dtype=torch.float)  # Shape: (sequence_length, num_nodes, num_features)
+        y = torch.tensor(self.y[idx], dtype=torch.float)  # Shape: same as x
 
-        # Flatten the node features to match the expected input for GCN
-        x = x.view(-1, 4)  # Shape: (12*207, 4)
-        y = y.view(-1, 4)  # Shape: (12*207, 4)
-
-        # Ensure edge indices are within valid range
-        edge_index = np.array(np.nonzero(self.adj_matrix))
-        edge_index = torch.tensor(edge_index, dtype=torch.long)
-        edge_attr = torch.tensor(self.adj_matrix[edge_index[0], edge_index[1]], dtype=torch.float)
-
-        if edge_index.max().item() >= self.num_nodes:
-            raise ValueError(f"Edge index {edge_index.max().item()} is out of bounds for num_nodes {self.num_nodes}")
-
-        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
-        return data
+        return Data(x=x, edge_index=self.edge_index, edge_attr=self.edge_attr, y=y)
 
 
 class DataModule(LightningDataModule):
@@ -66,9 +59,9 @@ class DataModule(LightningDataModule):
         test_data = np.load(sequences_path / 'test.npz')
         x_test, y_test = test_data['x'], test_data['y']
 
-        self.train_dataset = MyDataset(x_train, y_train, self.adj_mx)
-        self.val_dataset = MyDataset(x_val, y_val, self.adj_mx)
-        self.test_dataset = MyDataset(x_test, y_test, self.adj_mx)
+        self.train_dataset = TrafficDataset(x_train, y_train, self.adj_mx)
+        self.val_dataset = TrafficDataset(x_val, y_val, self.adj_mx)
+        self.test_dataset = TrafficDataset(x_test, y_test, self.adj_mx)
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset,
@@ -81,12 +74,10 @@ class DataModule(LightningDataModule):
         return DataLoader(self.val_dataset,
                           num_workers=config.data_module.num_workers,
                           persistent_workers=config.data_module.persistent_workers,
-                          batch_size=config.data_module.batch_size,
-                          shuffle=False)
+                          batch_size=config.data_module.batch_size)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset,
                           num_workers=config.data_module.num_workers,
                           persistent_workers=config.data_module.persistent_workers,
-                          batch_size=config.data_module.batch_size,
-                          shuffle=False)
+                          batch_size=config.data_module.batch_size)

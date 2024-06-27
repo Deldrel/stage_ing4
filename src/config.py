@@ -6,6 +6,10 @@ from pydantic import BaseModel, ValidationError
 
 class AccessibilityConfig(BaseModel):
     query_radius: int = 500
+    random_max: float = 0.5
+    minimum_speed: float = 0
+    maximum_speed: float = 4
+    score_multiplier: float = 1
 
 
 class SequencerConfig(BaseModel):
@@ -20,19 +24,23 @@ class SequencerConfig(BaseModel):
 class WandbConfig(BaseModel):
     # api_key is handled in .env file, wandb automatically log if it is set
     project: str = 'StageING4'
+    entity: str = 'deldrel'
 
 
 class DataModuleConfig(BaseModel):
-    batch_size: int = 16
+    batch_size: int = 32
     num_workers: int = 8
     persistent_workers: bool = True
     training_set_ratio: float = 0.8
 
 
 class ModelConfig(BaseModel):
+    in_channels: int = 4
+    hidden_channels: int = 64
+    out_channels: int = 4
     learning_rate: float = 0.001
-    loss_function: str = 'L1Loss'
-    optimizer: str = 'NAdam'
+    loss_function: str = 'mse_loss'
+    optimizer: str = 'Adam'
 
 
 class TrainerConfig(BaseModel):
@@ -71,7 +79,7 @@ class ReduceLROnPlateauConfig(BaseModel):
 class Config(BaseModel):
     seed: int = 42
     logdir: str = 'logs'
-    verbose: bool = False
+    verbose: bool = True
 
     accessibility: AccessibilityConfig = AccessibilityConfig()
     sequencer: SequencerConfig = SequencerConfig()

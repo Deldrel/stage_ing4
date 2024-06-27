@@ -1,13 +1,11 @@
 from functools import lru_cache
-from pathlib import Path
 
-import torch
 import wandb
 
 from src.config import config
 from src.helpers.decorators import timer
 from .data_module import DataModule
-from .gnn import GNN
+from .dcrnn import DCRNN
 from .trainer import get_trainer
 
 
@@ -20,24 +18,13 @@ class LightningManager:
     @lru_cache(maxsize=1)
     def setup(self) -> None:
         self.data_module = DataModule()
-        self.model = GNN(in_channels=4, hidden_channels=64, out_channels=4, num_layers=4)
-        self.search_checkpoint()
+        self.model = DCRNN(in_channels=config.model.in_channels,
+                           hidden_channels=config.model.hidden_channels,
+                           out_channels=config.model.out_channels,
+                           sequence_length=config.sequencer.sequence_length,
+                           num_nodes=207,
+                           num_features=4)
         self.trainer = get_trainer()
-
-    def search_checkpoint(self) -> None:
-        path = Path(config.trainer.save_dir)
-        if not path.exists():
-            return
-        checkpoints = sorted(path.glob('*.pt'))
-        if not checkpoints:
-            return
-
-        if input(f"Load {checkpoints[-1]}? [y/n]: ") == "y":
-            try:
-                checkpoint = torch.load(checkpoints[-1])
-                self.model.load_state_dict(checkpoint)
-            except Exception as e:
-                print(f"Error loading checkpoint: {e}, keeping new model.")
 
     @timer
     def train_model(self) -> None:
@@ -45,6 +32,7 @@ class LightningManager:
 
         if config.trainer.log:
             wandb.init(project=config.wandb.project,
+                       entity=config.wandb.entity,
                        dir=config.logdir,
                        config=config.dump())
 

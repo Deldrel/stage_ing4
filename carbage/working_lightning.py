@@ -1,132 +1,202 @@
-import lightning as L
+from typing import Dict
+from time import perf_counter
+
 import numpy as np
 import torch
-import torch.nn.functional as F
-from torch_geometric.data import Data, DataLoader, Dataset
-from torch_geometric.nn import GCNConv
+import torch.nn as nn
+from lightning import LightningModule, seed_everything, Trainer
+from torch.utils.data import DataLoader, Dataset
 
 
-class MyDataset(Dataset):
-    def __init__(self, x, y, adj_matrix):
+class TrafficDataset(Dataset):
+    def __init__(self, x: np.ndarray, y: np.ndarray):
         super().__init__()
-        self.x = x
-        self.y = y
-        self.adj_matrix = adj_matrix
-        self.num_samples = x.shape[0]
-        self.num_nodes = adj_matrix.shape[0]
+        self.x = x  # Shape: (num_samples, sequence_length, num_nodes, num_features)
+        self.y = y  # Shape: same as x
 
-    def __len__(self):
-        return self.num_samples
+    def __len__(self) -> int:
+        return len(self.x)
 
-    def __getitem__(self, idx):
-        x = torch.tensor(self.x[idx], dtype=torch.float)  # Shape: (12, 207, 4)
-        y = torch.tensor(self.y[idx], dtype=torch.float)  # Shape: (12, 207, 4)
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+        x = torch.tensor(self.x[idx], dtype=torch.float)  # Shape: (sequence_length, num_nodes, num_features)
+        y = torch.tensor(self.y[idx], dtype=torch.float)  # Shape: same as x
 
-        # Flatten the node features to match the expected input for GCN
-        x = x.view(-1, 4)  # Shape: (12*207, 4)
-        y = y.view(-1, 4)  # Shape: (12*207, 4)
-
-        # Ensure edge indices are within valid range
-        edge_index = torch.tensor(np.nonzero(self.adj_matrix), dtype=torch.long)
-        edge_attr = torch.tensor(self.adj_matrix[edge_index[0], edge_index[1]], dtype=torch.float)
-
-        if edge_index.max().item() >= self.num_nodes:
-            raise ValueError(f"Edge index {edge_index.max().item()} is out of bounds for num_nodes {self.num_nodes}")
-
-        data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
-        return data
+        return {
+            'x': x,
+            'y': y,
+        }
 
 
-class MyDataModule(L.LightningDataModule):
-    def __init__(self, train_dataset, val_dataset, test_dataset, batch_size=32):
-        super().__init__()
-        self.train_dataset = train_dataset
-        self.val_dataset = val_dataset
-        self.test_dataset = test_dataset
-        self.batch_size = batch_size
+class DiffusionConvolution(nn.Module):
+    def __init__(self, num_nodes: int, num_features: int, K: int, W: np.ndarray):
+        super(DiffusionConvolution, self).__init__()
+        self.num_nodes = num_nodes
+        self.num_features = num_features
+        self.K = K
+        self.W = torch.tensor(W, dtype=torch.float32)
 
-    def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        ones = torch.ones(self.num_nodes)
+        out_degree = self.W @ ones
+        self.DO_inv = torch.linalg.inv(torch.diag(out_degree))
 
-    def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size)
+        in_degree = self.W.T @ ones
+        self.DI_inv = torch.linalg.inv(torch.diag(in_degree))
 
-    def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size)
+        self.W_powers = [torch.matrix_power(self.DO_inv @ self.W, k) for k in range(self.K)]
+        self.WT_powers = [torch.matrix_power(self.DI_inv @ self.W.T, k) for k in range(self.K)]
+
+    def forward(self, X: torch.Tensor, theta: torch.Tensor) -> torch.Tensor:
+        device = X.device
+        W_powers = [W_power.to(device) for W_power in self.W_powers]
+        WT_powers = [WT_power.to(device) for WT_power in self.WT_powers]
+
+        X_out = X.clone()
+
+        for p in range(self.num_features):
+            for k in range(self.K):
+                a = theta[k, 0] * W_powers[k]
+                b = theta[k, 1] * WT_powers[k]
+                X_out[:, p] += (a + b) @ X[:, p]
+
+        return X_out
 
 
-class MyGNN(L.LightningModule):
-    def __init__(self, in_channels, hidden_channels, out_channels):
-        super(MyGNN, self).__init__()
-        self.conv1 = GCNConv(in_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, out_channels)
+class DCGRUCell(LightningModule):
+    def __init__(self, num_nodes: int, num_features: int, input_dim: int, hidden_dim: int, K: int, W: np.ndarray):
+        super(DCGRUCell, self).__init__()
+        self.num_nodes = num_nodes
+        self.num_features = num_features
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.K = K
+        self.W = W
 
-    def forward(self, data):
-        x, edge_index, edge_weight = data.x, data.edge_index, data.edge_attr
-        x = self.conv1(x, edge_index, edge_weight)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index, edge_weight)
-        return x
+        self.diffusion_conv = DiffusionConvolution(self.num_nodes, self.num_features, self.K, self.W)
+
+        self.theta_r = nn.Parameter(torch.randn(self.K, 2))
+        self.theta_u = nn.Parameter(torch.randn(self.K, 2))
+        self.theta_C = nn.Parameter(torch.randn(self.K, 2))
+
+        self.W_r = nn.Parameter(torch.randn(self.input_dim + self.hidden_dim, self.hidden_dim))
+        self.W_u = nn.Parameter(torch.randn(self.input_dim + self.hidden_dim, self.hidden_dim))
+        self.W_C = nn.Parameter(torch.randn(self.input_dim + self.hidden_dim, self.hidden_dim))
+
+        self.b_r = nn.Parameter(torch.zeros(self.hidden_dim))
+        self.b_u = nn.Parameter(torch.zeros(self.hidden_dim))
+        self.b_C = nn.Parameter(torch.zeros(self.hidden_dim))
+
+    def forward(self, X: torch.Tensor, H: torch.Tensor) -> torch.Tensor:
+        X_H = torch.cat([X, H], dim=1)
+
+        r = torch.sigmoid(self.diffusion_conv(X_H, self.theta_r) @ self.W_r + self.b_r)
+        u = torch.sigmoid(self.diffusion_conv(X_H, self.theta_u) @ self.W_u + self.b_u)
+
+        X_rH = torch.cat([X, r * H], dim=1)
+        C = torch.tanh(self.diffusion_conv(X_rH, self.theta_C) @ self.W_C + self.b_C)
+
+        H = u * H + (1 - u) * C
+
+        return H
+
+
+class DCRNN(LightningModule):
+    def __init__(self, num_nodes: int, num_features: int, input_dim: int, hidden_dim: int, output_dim: int, K: int,
+                 W: np.ndarray, num_layers: int):
+        super(DCRNN, self).__init__()
+        self.num_nodes = num_nodes
+        self.num_features = num_features
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
+        self.K = K
+        self.W = W
+        self.num_layers = num_layers
+
+        self.encoder = nn.ModuleList([DCGRUCell(num_nodes=self.num_nodes,
+                                                num_features=self.num_features,
+                                                input_dim=self.input_dim if i == 0 else self.hidden_dim,
+                                                hidden_dim=self.hidden_dim,
+                                                K=self.K,
+                                                W=self.W) for i in range(self.num_layers)])
+
+        self.decoder = nn.ModuleList([DCGRUCell(num_nodes=self.num_nodes,
+                                                num_features=self.num_features,
+                                                input_dim=self.hidden_dim,
+                                                hidden_dim=self.hidden_dim,
+                                                K=self.K,
+                                                W=self.W) for i in range(self.num_layers)])
+
+        self.linear = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        device = X.device
+        H_enc = [torch.zeros(self.num_nodes, self.hidden_dim, device=device) for _ in range(self.num_layers)]
+        H_dec = [torch.zeros(self.num_nodes, self.hidden_dim, device=device) for _ in range(self.num_layers)]
+        outputs = []
+
+        for t in range(X.shape[0]):
+            x_t = X[t, :, :]
+            for i, layer in enumerate(self.encoder):
+                H_enc[i] = layer(x_t, H_enc[i])
+                x_t = H_enc[i]
+                x_t = torch.relu(x_t)
+
+        dec_input = H_enc[-1]
+        for t in range(X.shape[0]):
+            for i, layer in enumerate(self.decoder):
+                H_dec[i] = layer(dec_input, H_dec[i])
+                dec_input = H_dec[i]
+                dec_input = torch.relu(dec_input)
+
+            out = self.linear(dec_input)
+            outputs.append(out.unsqueeze(0))
+
+        outputs = torch.cat(outputs, dim=0)
+        return outputs
 
     def training_step(self, batch, batch_idx):
-        y_hat = self(batch)
-        loss = F.mse_loss(y_hat, batch.y)
+        x = batch['x'].squeeze(0)
+        y = batch['y'].squeeze(0)
+        x, y = x.to(self.device), y.to(self.device)  # Move inputs to the correct device
+        out = self(x)
+        loss = nn.MSELoss()(out, y)
         self.log('train_loss', loss)
         return loss
 
-    def validation_step(self, batch, batch_idx):
-        y_hat = self(batch)
-        loss = F.mse_loss(y_hat, batch.y)
-        self.log('val_loss', loss)
-
-    def test_step(self, batch, batch_idx):
-        y_hat = self(batch)
-        loss = F.mse_loss(y_hat, batch.y)
-        self.log('test_loss', loss)
-
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.01)
+        return torch.optim.Adam(self.parameters(), lr=0.001)
 
 
-# Load data
-train_data = np.load('data/sequences/train.npz')
-val_data = np.load('data/sequences/val.npz')
-test_data = np.load('data/sequences/test.npz')
-adj_matrix = np.load('data/crafted/adj_mx.npy')
+seed_everything(42)
 
-# Extract matrices
-train_x = train_data['x']
-train_y = train_data['y']
-val_x = val_data['x']
-val_y = val_data['y']
-test_x = test_data['x']
-test_y = test_data['y']
+num_samples = 10
+sequence_length = 12
+num_nodes = 207
+num_features = 4
 
-print(f"Train data shape: {train_x.shape}, {train_y.shape}")
-print(f"Val data shape: {val_x.shape}, {val_y.shape}")
-print(f"Test data shape: {test_x.shape}, {test_y.shape}")
-print(f"Adjacency matrix shape: {adj_matrix.shape}")
+x = np.random.rand(num_samples, sequence_length, num_nodes, num_features)
+y = np.random.rand(num_samples, sequence_length, num_nodes, num_features)
 
-# Ensure adjacency matrix indices are within bounds
-if adj_matrix.shape[0] != adj_matrix.shape[1]:
-    raise ValueError("Adjacency matrix is not square")
-if adj_matrix.shape[0] != train_x.shape[2]:
-    raise ValueError("Adjacency matrix size does not match the number of nodes")
+K = 2  # Number of diffusion steps
+W = np.random.rand(num_nodes, num_nodes)  # Weighted adjacency matrix
+dcgru_hidden_dim = 32
 
-# Create dataset instances
-train_dataset = MyDataset(train_x, train_y, adj_matrix)
-val_dataset = MyDataset(val_x, val_y, adj_matrix)
-test_dataset = MyDataset(test_x, test_y, adj_matrix)
+dataset = TrafficDataset(x, y)
+data_loader = DataLoader(dataset,
+                         batch_size=1,
+                         num_workers=8,
+                         persistent_workers=True)
 
-# Instantiate the data module
-data_module = MyDataModule(train_dataset, val_dataset, test_dataset)
+model = DCRNN(num_nodes=num_nodes,
+              num_features=num_features,
+              input_dim=num_features,
+              hidden_dim=dcgru_hidden_dim,
+              output_dim=num_features,
+              K=K,
+              W=W,
+              num_layers=2)
 
-# Instantiate the model
-model = MyGNN(in_channels=4, hidden_channels=64, out_channels=4)
-
-# Initialize the trainer
-trainer = L.Trainer(max_epochs=1)
-
-# Train the model
-trainer.fit(model, data_module)
-trainer.test(datamodule=data_module)
+trainer = Trainer(max_epochs=10)
+start = perf_counter()
+trainer.fit(model, data_loader)
+print(f"Time: {perf_counter() - start:.6f} s")

@@ -5,7 +5,7 @@ pydantic
 matplotlib
 numpy
 pandas
-pytables
+tables
 torch
 torch-geometric
 tqdm

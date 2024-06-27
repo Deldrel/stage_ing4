@@ -20,7 +20,7 @@ def main() -> None:
         "4": ("Train model", lightning_manager.train_model),
         "5": ("Show plots", visualize),
         "6": ("Create Maps", create_accessibility_map),
-    }).start(timeout=10)
+    }).start(timeout=20)
 
 
 if __name__ == '__main__':

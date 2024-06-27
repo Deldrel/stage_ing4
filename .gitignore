@@ -165,3 +165,6 @@ wandb/
 checkpoints/
 lightning_logs/
 models/
+logs/
+
+!data/original/

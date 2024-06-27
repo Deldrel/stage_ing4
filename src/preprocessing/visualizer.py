@@ -141,4 +141,4 @@ def visualize():
     visualize_speed(dfs, sensor_index=[0, 1, 6, 14], day_index=0, time_period=24 * 12)
     visualize_speed(dfs[1], sensor_index=[0, 1, 6, 14], day_index=0, time_period=24 * 12)
     #visualize_distribution(dfs)
-    #visualize_accessibility_score()
+    visualize_accessibility_score()

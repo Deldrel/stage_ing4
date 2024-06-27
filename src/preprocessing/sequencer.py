@@ -97,6 +97,7 @@ def sequence() -> None:
     sequences_path.mkdir(parents=True, exist_ok=True)
 
     dfs = load_csv_files(crafted_path, verbose=config.verbose)
+    dfs = dfs[1:]
     print(f"Creating sequences...")
     sequences = create_sequences(dfs, verbose=config.verbose)
     x_all = np.concatenate([seq[0] for seq in sequences], axis=0)
@@ -110,5 +111,8 @@ def sequence() -> None:
 
     print(f"Saving sequences to {sequences_path}...")
     np.savez_compressed(sequences_path / 'train.npz', x=x_train, y=y_train)
+    print(f"Saved train.npz")
     np.savez_compressed(sequences_path / 'val.npz', x=x_val, y=y_val)
+    print(f"Saved val.npz")
     np.savez_compressed(sequences_path / 'test.npz', x=x_test, y=y_test)
+    print(f"Saved test.npz")

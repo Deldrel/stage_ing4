@@ -18,7 +18,7 @@ def get_trainer() -> Trainer:
 
     early_stopping_callback = EarlyStopping(
         monitor=config.early_stopping.monitor,
-        # min_delta=config.early_stopping.min_delta,
+        min_delta=config.early_stopping.min_delta,
         patience=config.early_stopping.patience,
         verbose=config.early_stopping.verbose,
         mode=config.early_stopping.mode
@@ -38,5 +38,6 @@ def get_trainer() -> Trainer:
             checkpoint_callback,
             early_stopping_callback,
         ],
-        logger=logger
+        logger=logger,
+        accelerator='auto'
     )

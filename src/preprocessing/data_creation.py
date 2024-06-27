@@ -62,24 +62,20 @@ def craft_wheelchair_data(car_data: pd.DataFrame, accessibility_scores: List[flo
     if len(car_data.columns) != len(accessibility_scores):
         raise ValueError(f"Expected {len(accessibility_scores)} columns, but got {len(car_data.columns)}")
 
-    random_max = 0.5
-    minimum_speed = 0
-    maximum_speed = 4
-
     car_speeds = car_data.values
 
     # Linear transformation to scale car speeds to wheelchair speeds
-    wheelchair_speeds = map(car_speeds, car_speeds.min(), car_speeds.max(), minimum_speed, maximum_speed)
+    wheelchair_speeds = map(car_speeds, car_speeds.min(), car_speeds.max(), config.accessibility.minimum_speed, config.accessibility.maximum_speed)
 
     # Adding some randomness to simulate realistic wheelchair speed variation
-    wheelchair_speeds += np.random.normal(0, random_max, wheelchair_speeds.shape)
+    wheelchair_speeds += np.random.normal(0, config.accessibility.random_max, wheelchair_speeds.shape)
 
     # Apply the accessibility scores transformation
     for i, score in enumerate(accessibility_scores):
-        wheelchair_speeds[:, i] *= score + 1
+        wheelchair_speeds[:, i] *= config.accessibility.score_multiplier * score + 1
 
     # Ensure that the wheelchair speeds are within the range of the car speeds with linear transformation
-    wheelchair_speeds = map(wheelchair_speeds, wheelchair_speeds.min(), wheelchair_speeds.max(), minimum_speed, maximum_speed)
+    wheelchair_speeds = map(wheelchair_speeds, wheelchair_speeds.min(), wheelchair_speeds.max(), config.accessibility.minimum_speed, config.accessibility.maximum_speed)
 
     wheelchair_data[:] = wheelchair_speeds
 
