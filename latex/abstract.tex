@@ -1,0 +1,53 @@
+%! Author = pierre
+%! Date = 28/06/2024
+
+\documentclass[10pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{subcaption}
+\usepackage{comment}
+\usepackage{tabularx}
+\usepackage{helvet}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\renewcommand{\familydefault}{\sfdefault}
+\pgfplotsset{compat=1.17}
+
+\geometry{a4paper, margin=1in}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=black,
+    citecolor=blue,
+}
+
+\title{Premier rendu: Abstract}
+\author{Pierre LAPOLLA}
+\date{\today}
+
+\begin{document}
+
+    \maketitle
+    \begin{abstract}
+        Itinerary recommendation systems are used on a daily basis by a wide range of people, to go from a starting place to their destination.
+        However, most existing systems do not consider accessibility constraints specific to wheelchair users.
+        There is also not much data available on wheelchair users itinerary.
+        In this context, this paper proposes an adaptation and evaluation of an existing itinerary recommendation system: Diffusion Convolutional Recurrent Neural Network (DCRNN).
+        This adaptation is capable to handle multiple locomotion modes, specifically cars and wheelchairs, and computes the time required to travel from point A to point B.
+        Besides the model adaptation, this study proposes a method to derivate wheelchair traffic data from a dataset of car traffic data.
+        Finally, the evaluation of the model is performed through the comparation to a baseline using the Mean Absolute Error (MAE), Mean Absolute Percentage Error (MAPE) and Mean Squared Error (MSE) error metrics.
+        The source code is available at \url{https://github.com/Deldrel/stage_ing4}.
+    \end{abstract}
+
+\end{document}

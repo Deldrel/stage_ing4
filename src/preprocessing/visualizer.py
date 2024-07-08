@@ -72,7 +72,7 @@ def create_accessibility_map(score_column: str = 'accessibility_score'):
         color = mcolors.to_hex(gradient(value))
         return color
 
-    path = Path('data/crafted/accessibility_data_compute_accessibility_score.csv')
+    path = Path('data/crafted/accessibility_data.csv')
     output_path = Path('data/accessibility/accessibility_map.html')
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(path)

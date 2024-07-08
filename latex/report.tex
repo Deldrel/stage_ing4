@@ -1,0 +1,272 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{subcaption}
+\usepackage{comment}
+\usepackage{tabularx}
+\usepackage{helvet}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+    \title{Conference Paper Title*\\
+    {\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and
+    should not be used}
+    \thanks{Identify applicable funding agency here. If none, delete this.}
+    }
+
+    \author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
+    \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+    \textit{name of organization (of Aff.)}\\
+    City, Country \\
+    email address or ORCID}
+    \and
+    \IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
+    \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+    \textit{name of organization (of Aff.)}\\
+    City, Country \\
+    email address or ORCID}
+    \and
+    \IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
+    \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+    \textit{name of organization (of Aff.)}\\
+    City, Country \\
+    email address or ORCID}
+    \and
+    \IEEEauthorblockN{4\textsuperscript{th} Given Name Surname}
+    \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+    \textit{name of organization (of Aff.)}\\
+    City, Country \\
+    email address or ORCID}
+    \and
+    \IEEEauthorblockN{5\textsuperscript{th} Given Name Surname}
+    \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+    \textit{name of organization (of Aff.)}\\
+    City, Country \\
+    email address or ORCID}
+    \and
+    \IEEEauthorblockN{6\textsuperscript{th} Given Name Surname}
+    \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+    \textit{name of organization (of Aff.)}\\
+    City, Country \\
+    email address or ORCID}
+    }
+
+    \maketitle
+    \begin{abstract}
+        Our goal is to develop a model for predicting optimal itineraries based on selectable criteria, which may include minimal carbon footprint, health considerations, and potentially a combination of these factors.
+        The criteria selection is a difficult task as we want relevant ones and ones that are available in public datasets as we will not collect any new data here.
+        Some criteria that we could consider are: minimal carbon footprint, air quality exposure, physical activity.
+        We want our solution to add something new to the existing solutions: balancing multiple criteria and maybe allows weighting them.
+        Graph neural networks (GNNs) are a promising approach for this problem, as they can be dynamic.
+        If we manage to produce a solution to this problem, it could be used in various applications, such as enhancing existing apps to offer more personalized routing options.
+        However we expect some challenges and limitations, such as data availability, computational complexity, and the need for real-time processing.
+        The GitHub repository for this document can be found at \url{https://github.com/Deldrel/StageING4}.
+    \end{abstract}
+    \tableofcontents
+
+
+    \section{Key algorithms and Methods}\label{sec:key-algorithms-and-methods}
+    Pathfinding algorithm are widely used in various applications, network routing, video games, etc.
+    Below is a comparison table of some of the most popular algorithms:
+
+    \begin{table}[h]
+        \centering
+        \begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+            \hline
+            \textbf{Algorithm} & \textbf{Best for}                                  & \textbf{Time Complexity}          & \textbf{Space Complexity} & \textbf{Negative Weights?} \\ \hline
+            Dijkstra’s         & Shortest paths from a single source in a graph     & \(O(V^2)\) or \(O(E + V \log V)\) & \(O(V)\)                  & No                         \\ \hline
+            A*                 & Pathfinding with heuristics to speed up the search & \(O(E)\)                          & \(O(V)\)                  & No                         \\ \hline
+            Bellman-Ford       & Graphs with negative weight edges                  & \(O(VE)\)                         & \(O(V)\)                  & Yes                        \\ \hline
+            Floyd-Warshall     & Shortest paths between all pairs of nodes          & \(O(V^3)\)                        & \(O(V^2)\)                & Yes                        \\ \hline
+        \end{tabularx}
+        \caption{Comparison of Route Optimization Algorithms}
+        \label{tab:route_optimization_algorithms}
+    \end{table}
+
+
+    \section{Multi-Objective Optimization}\label{sec:multi-objective-optimization}
+    The key algorithms and methods are not sufficient to solve our problem.
+    These algorithms can optimize multiple criteria simultaneously, which is very close to what we want.
+
+    \subsection{Genetic Algorithms}\label{subsec:genetic-algorithms}
+    These algorithms mimic natural selection, with crossovers and mutations.
+    They are good for finding the global optimum of a function.
+    However, they are not good for real-time applications.
+
+    \subsection{Pareto Optimization}\label{subsec:pareto-optimization}
+    Pareto optimization is a multi-objective optimization technique that aims to find the best trade-offs between multiple objectives.
+    It is based on the Pareto principle, which states that for any given problem, some solutions are better than others.
+    This solution is good for our problem as we want to balance multiple criteria.
+    However it is not dynamic, which is a limitation.
+
+
+    \section{Graph Neural Networks}\label{sec:graph-neural-networks}
+    Despite their efficiency, the multi-objective optimization algorithms are not good options for us.
+    We want scalable and dynamic solutions, which is why we are considering Graph Neural Networks (GNNs).
+    This section is largely based on the work of~\cite{Wu_2021}.
+    It contains lots of references that we can use to deepen our understanding of the topic.
+
+    \subsection{Overview of Graph Neural Networks}\label{subsec:overview-of-graph-neural-networks}
+    Graph Neural Networks (GNNs) are a class of deep learning models designed to handle graphs as input data.
+    Traditional neural networks assume that the input data is in a Euclidean space, which is not the case for graphs.
+    They also treat inputs as independent of each other, which is not true for graph data.
+    These differences allows GNNs to capture the structure of the graph and the relationships between nodes.
+    They are powerfull tools for tasks such as node classification, link prediction, and graph classification.
+
+    \subsection{Types of GNN Architectures}\label{subsec:types-of-gnn-architectures}
+    The paper~\cite{Wu_2021} describes four types of GNN architectures where we can classify most other GNNs:
+
+    \begin{itemize}
+        \item \textbf{Recurrent Graph Neural Networks (RecGNNs)}:
+        They aim to learn node representations with recurrent architectures.
+        They assume nodes are constantly exchanging information with their neighbors.
+        \item \textbf{Convolutional Graph Neural Networks (ConvGNNs)}:
+        They generalize the convolution from euclidean space to graph data.
+        The idea is to aggregate information from neighbors to update the node representation.
+        \item \textbf{Graph Autoencoders (GAEs)}:
+        They aim to learn a low-dimensional representation of the graph.
+        They can reconstruct the graph from this representation.
+        \item \textbf{Spatial-Temporal Graph Neural Networks (STGNNs)}:
+        They are designed for spatio-temporal data.
+        They can learn hidden patterns from spatial and temporal data.
+    \end{itemize}
+
+    \begin{table}[h]
+        \centering
+        \begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+            \hline
+            \textbf{Feature}     & \textbf{RecGNNs}                                                & \textbf{ConvGNNs}                               & \textbf{GAEs}                                               & \textbf{STGNNs}                                \\ \hline
+            \textbf{Core Idea}   & Iterative processing of node information to reach stable states      & Generalize convolution operations to graph data   & Encode graph structure into a latent, low-dimensional space   & Integrate both spatial and temporal graph data    \\ \hline
+            \textbf{Use Case}    & Complex relational reasoning, dynamic graph updates             & Node classification, community detection          & Graph reconstruction, link prediction                         & Dynamic prediction, traffic forecasting           \\ \hline
+            \textbf{Advantages}  & Captures dynamic changes in graph structure                     & Efficient in learning node representations        & Useful in unsupervised learning tasks                         & Handles graphs evolving over time                 \\ \hline
+            \textbf{Limitations} & High computational cost for large graphs                        & Limited by local neighborhood information         & Requires large datasets for training                          & Complex model architectures and computations      \\ \hline
+        \end{tabularx}
+        \caption{Comparison of Graph Neural Network Architectures}
+        \label{tab:gnn_comparison}
+    \end{table}
+
+
+    From these architectures, we can assume that STGNNs are the most relevant for our problem as our data will likely be space and time dependent.
+
+    \subsection{Applications}\label{subsec:applications}
+
+    \begin{itemize}
+        \item \textbf{Node Classification}: assign a label to each node in the graph.
+        \item \textbf{Graph Classification}: assign a label to the entire graph.
+        \item \textbf{Link Prediction}: predict the existence of a link between two nodes.
+        \item \textbf{Computer Vision}: use GNNs for image segmentation, object detection, etc.
+        \item \textbf{Natural Language Processing}: use GNNs for text classification, sentiment analysis, etc.
+        \item \textbf{Recommender Systems}: use GNNs to recommend products, movies, etc.
+        \item \textbf{Drug Discovery}: use GNNs to predict molecular properties.
+        \item \textbf{Traffic Prediction}: use GNNs to predict traffic flow, congestion, etc.
+    \end{itemize}
+
+    The paper~\cite{Wu_2021} refers to three other papers that used STGNNs~\cite{zhang2018gaan,li2018diffusion,ijcai2018p505}~for traffic problems.
+
+
+    \section{Primary Studies}\label{sec:primary-studies}
+
+    \subsection{First Study}\label{subsec:first-study}
+    A Graph Pointer Network-Based Multi-Objective Deep Reinforcement Learning Algorithm for Solving the Travelling Salesman Problem~\cite{math11020437}.
+
+    \begin{itemize}
+        \item \textbf{Context}:
+        This research is based on multi-objective optimization problems and uses the travelling salesman problem as a case study.
+        With new methods to process sequential and temporal data, notably with GNNs, the authors propose a new algorithm to solve the TSP\@.
+        \item \textbf{Problem}:
+        The paper addresses the need for more sophisticated algorithms that can effectively manage multiple objectives without sacrificing performance on ny single objective.
+        \item \textbf{Data}:
+        The authors generated their data using the random generator from PyTorch.
+        The training set has 500,000 samples and the validation set has 1,000 samples.
+        Note: we could use the same method if we can properly model our problem and the data we need.
+        \item \textbf{Results}:
+        The authors used a similar comparison test than other paper they cited.
+        We can see in the image below that their model (MODGRL) outperforms the other models.
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.5\textwidth]{resources/score_function}
+            \caption{Comparison of MODGRL with other models}
+            \label{fig:modgrl_comparison}
+        \end{figure}
+
+        \item \textbf{Future Work}:
+        The paper emphasizes the potential for further improvement and application of such models to even more complex and varied multi-objective optimization problems.
+        The research suggests that leveraging the advancements in graph neural networks and deep reinforcement learning could lead to significant breakthroughs in various real-world applications requiring multi-objective decision-making.
+    \end{itemize}
+
+    \subsection{Second Study}\label{subsec:second-study}
+    Deep reinforcement learning meets graph neural networks: Exploring a routing optimization use case~\cite{ALMASAN2022184}.
+
+    \begin{itemize}
+        \item \textbf{Context}:
+        This research is about routing optimization in dynamic and varied network topologies.
+        It integrates Deep Reinforcement Learning (DRL) and Graph Neural Networks (GNNs) to develop a model that can generalize to unseen network.
+        \item \textbf{Problem}:
+        DLR solutions struggle to work on unseen topologies.
+        The integration of a GNN allows better adaptation without retraining the model.
+        \item \textbf{Data}:
+        They author used synthetic topologies generated with NetworkX in python and real-world topologies from the Internet Topology Zoo~\cite{6027859}.
+        Note: not the first time we see random generated datasets, we could use the same method.
+        \item \textbf{Results}:
+        The combination of DRL+GNN outperformed the DRL-only model on unseen topologies.
+        Their solution handled dynamic routing in optical networks with various conditions without retraining.
+        \item \textbf{Future Work}:
+        The paper suggests that the model could be further improved on more applications.
+        Thay say that having a model that could generalize even more could transform the way we design and manage networks.
+    \end{itemize}
+
+    \subsection{Third Study}\label{subsec:third-study}
+    Diffusion Convolutional Recurrent Neural Network: Data-Driven Traffic Forecasting~\cite{li2018diffusion}.
+    This is one of the papers mentionned in~\cite{Wu_2021}, in section~\ref{sec:graph-neural-networks}.
+
+    \begin{itemize}
+        \item \textbf{Context}:
+        This research is about traffic forecasting on road networks, for smart transportation systems.
+        Note: this could be useful if we want to make traffic routing predictions.
+        \item \textbf{Problem}:
+        Forecasting traffic is a challenging task due to the complexity of road networks and the dynamic nature of traffic.
+        Traditional methods struggle with long-term predictions because of the spatial and temporal dependencies.
+        \item \textbf{Data}:
+        This is why this paper is interesting for us.
+        They used 2 datasets from PyTorch Geometric Temporal~\cite{rozemberczki2021pytorch}.
+        \begin{itemize}
+            \item METR-LA: traffic speed data from loop detectors (207) in Los Angeles.
+            \item PEMS-BAY: traffic speed data from loop detectors (325) in the Bay Area.
+        \end{itemize}
+        \item \textbf{Results}:
+        Their model is classified as a STGNN by paper~\cite{Wu_2021}.
+        It outperformed traditional and some deep learning models on horizons of 15 minutes, 30 minutes, and 60 minutes.
+        \item \textbf{Future Work}:
+        The paper suggests that the model could be used on other spatio-temporal tasks than traffic forecasting.
+        they also mention that it could be adapted to dynamic network structures.
+    \end{itemize}
+
+
+    \section{Etude approfondie}
+    a cause de la durée du stage, notre objectif est d'améliorer une solution existente en ajoutant des critères supplémentaires.
+    nous nous sommes donc concentrés sur la 3eme étude.
+    malheureusement leur code source n'est pas bien documenté et nous n'avons pas pu le reproduire.
+    nous avons perdu du temps à essayer de comprendre leur code et à le reproduire.
+    mais nous avons tout de même appris de leur solutions et ces connaissances nous seront peut etre utile à l'avenir.
+
+    %\newpage
+    \bibliographystyle{unsrt}
+    \bibliography{references}
+
+\end{document}

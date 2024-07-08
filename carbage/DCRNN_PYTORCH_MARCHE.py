@@ -4,7 +4,7 @@ from time import perf_counter
 import numpy as np
 import torch
 import torch.nn as nn
-from lightning import LightningModule, seed_everything, Trainer
+from lightning import seed_everything
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -46,22 +46,18 @@ class DiffusionConvolution(nn.Module):
         self.WT_powers = [torch.matrix_power(self.DI_inv @ self.W.T, k) for k in range(self.K)]
 
     def forward(self, X: torch.Tensor, theta: torch.Tensor) -> torch.Tensor:
-        device = X.device
-        W_powers = [W_power.to(device) for W_power in self.W_powers]
-        WT_powers = [WT_power.to(device) for WT_power in self.WT_powers]
-
         X_out = X.clone()
 
         for p in range(self.num_features):
             for k in range(self.K):
-                a = theta[k, 0] * W_powers[k]
-                b = theta[k, 1] * WT_powers[k]
+                a = theta[k, 0] * self.W_powers[k]
+                b = theta[k, 1] * self.WT_powers[k]
                 X_out[:, p] += (a + b) @ X[:, p]
 
         return X_out
 
 
-class DCGRUCell(LightningModule):
+class DCGRUCell(nn.Module):
     def __init__(self, num_nodes: int, num_features: int, input_dim: int, hidden_dim: int, K: int, W: np.ndarray):
         super(DCGRUCell, self).__init__()
         self.num_nodes = num_nodes
@@ -99,7 +95,7 @@ class DCGRUCell(LightningModule):
         return H
 
 
-class DCRNN(LightningModule):
+class DCRNN(nn.Module):
     def __init__(self, num_nodes: int, num_features: int, input_dim: int, hidden_dim: int, output_dim: int, K: int,
                  W: np.ndarray, num_layers: int):
         super(DCRNN, self).__init__()
@@ -129,9 +125,8 @@ class DCRNN(LightningModule):
         self.linear = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
-        device = X.device
-        H_enc = [torch.zeros(self.num_nodes, self.hidden_dim, device=device) for _ in range(self.num_layers)]
-        H_dec = [torch.zeros(self.num_nodes, self.hidden_dim, device=device) for _ in range(self.num_layers)]
+        H_enc = [torch.zeros(self.num_nodes, self.hidden_dim) for _ in range(self.num_layers)]
+        H_dec = [torch.zeros(self.num_nodes, self.hidden_dim) for _ in range(self.num_layers)]
         outputs = []
 
         for t in range(X.shape[0]):
@@ -154,18 +149,6 @@ class DCRNN(LightningModule):
         outputs = torch.cat(outputs, dim=0)
         return outputs
 
-    def training_step(self, batch, batch_idx):
-        x = batch['x'].squeeze(0)
-        y = batch['y'].squeeze(0)
-        x, y = x.to(self.device), y.to(self.device)
-        out = self(x)
-        loss = nn.MSELoss()(out, y)
-        self.log('train_loss', loss)
-        return loss
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.001)
-
 
 seed_everything(42)
 
@@ -182,10 +165,7 @@ W = np.random.rand(num_nodes, num_nodes)  # Weighted adjacency matrix
 dcgru_hidden_dim = 32
 
 dataset = TrafficDataset(x, y)
-data_loader = DataLoader(dataset,
-                         batch_size=1,
-                         num_workers=8,
-                         persistent_workers=True)
+data_loader = DataLoader(dataset, batch_size=1)
 
 model = DCRNN(num_nodes=num_nodes,
               num_features=num_features,
@@ -196,7 +176,23 @@ model = DCRNN(num_nodes=num_nodes,
               W=W,
               num_layers=2)
 
-trainer = Trainer(max_epochs=10)
+# Define optimizer
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
 start = perf_counter()
-trainer.fit(model, data_loader)
+for epoch in range(1):
+    for data in data_loader:
+        x = data['x']
+        y = data['y']
+        x = x.squeeze(0)
+        y = y.squeeze(0)
+
+        optimizer.zero_grad()
+        out = model(x)
+        loss = nn.MSELoss()(out, y)
+        loss.backward()
+        optimizer.step()
+
+    print(f"Epoch {epoch + 1}, Loss: {loss.item()}")
+
 print(f"Time: {perf_counter() - start:.6f} s")

@@ -97,12 +97,11 @@ def sequence() -> None:
     sequences_path.mkdir(parents=True, exist_ok=True)
 
     dfs = load_csv_files(crafted_path, verbose=config.verbose)
-    dfs = dfs[1:]
+    dfs = dfs[1:]  # tej score accessibilité
     print(f"Creating sequences...")
     sequences = create_sequences(dfs, verbose=config.verbose)
     x_all = np.concatenate([seq[0] for seq in sequences], axis=0)
     y_all = np.concatenate([seq[1] for seq in sequences], axis=0)
-    print(f"Saving sequences to {sequences_path}...")
 
     x_train, y_train, x_val, y_val, x_test, y_test = split_data(x_all, y_all, train_ratio=config.sequencer.train_ratio)
     print(f"Train shape: {x_train.shape}, {y_train.shape}")
