@@ -1,126 +1,106 @@
-from datetime import datetime
-from pathlib import Path
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm
 
-import lightning as L
-import torch
-import torch.nn.functional as F
-import wandb
-from torch.nn import Dropout, LayerNorm
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+# Anciennes tranches d'imposition
+tranches = [
+    (0, 10225, 0.0),  # jusqu'à 10,225€ : 0%
+    (10226, 26070, 0.11),  # de 10,226€ à 26,070€ : 11%
+    (26071, 74545, 0.30),  # de 26,071€ à 74,545€ : 30%
+    (74546, 160336, 0.41),  # de 74,546€ à 160,336€ : 41%
+    (160337, float('inf'), 0.45)  # plus de 160,336€ : 45%
+]
 
-from src.config import config
+# Nouvelles tranches d'imposition
+nouvelles_tranches = [
+    (0, 10292, 0.01),
+    (10293, 15438, 0.05),
+    (15439, 20584, 0.10),
+    (20585, 27789, 0.15),
+    (27790, 30876, 0.20),
+    (30877, 33964, 0.25),
+    (33965, 38081, 0.30),
+    (38082, 44256, 0.35),
+    (44257, 61752, 0.40),
+    (61753, 102921, 0.45),
+    (102922, 144089, 0.50),
+    (144090, 267594, 0.55),
+    (267595, 411683, 0.60),
+    (411684, float('inf'), 0.90)
+]
 
+# Fonction pour calculer l'impôt en fonction des tranches
+def calcul_impot(revenu, tranches):
+    impot = 0
+    for debut, fin, taux in tranches:
+        if revenu > debut:
+            impot += (min(revenu, fin) - debut) * taux
+        else:
+            break
+    return impot
 
-class DiffusionConv(torch.nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(DiffusionConv, self).__init__()
-        self.k = config.model.k
-        self.theta_forward = torch.nn.Parameter(torch.Tensor(self.k, in_channels, out_channels))
-        self.theta_backward = torch.nn.Parameter(torch.Tensor(self.k, in_channels, out_channels))
-        self.reset_parameters()
+# Calcul du taux d'imposition final
+revenus = np.arange(1, 400000)
+impots = np.array([calcul_impot(revenu, tranches) for revenu in revenus])
+taux_imposition = impots / revenus
 
-    def reset_parameters(self):
-        torch.nn.init.xavier_uniform_(self.theta_forward)
-        torch.nn.init.xavier_uniform_(self.theta_backward)
+# Calcul du taux d'imposition final pour les nouvelles tranches
+nouveaux_impots = np.array([calcul_impot(revenu, nouvelles_tranches) for revenu in revenus])
+nouveau_taux_imposition = nouveaux_impots / revenus
 
-    def forward(self, x, edge_index, edge_weight):
-        Tx_0 = x
-        Tx_1 = self.propagate(edge_index, x=x, norm=edge_weight)
-        out = torch.matmul(Tx_0.unsqueeze(1), self.theta_forward[0]) + torch.matmul(Tx_1.unsqueeze(1),
-                                                                                    self.theta_backward[0])
+# Calcul du revenu final après impôt
+revenu_final_ancien = revenus - impots
+revenu_final_nouveau = revenus - nouveaux_impots
 
-        for k in range(1, self.k):
-            Tx_2 = self.propagate(edge_index, x=Tx_1, norm=edge_weight)
-            out += torch.matmul(Tx_2.unsqueeze(1), self.theta_forward[k]) + torch.matmul(Tx_1.unsqueeze(1),
-                                                                                         self.theta_backward[k])
-            Tx_1, Tx_2 = Tx_2, Tx_1
+# Données INSEE pour ajuster la distribution des revenus
+deciles_revenus = [8820, 14010, 16980, 19590, 21980, 24470, 27310, 31020, 37060, 64840]
 
-        return out.squeeze(1)
+# Calcul de la moyenne et de l'écart-type approximatifs à partir des déciles
+mean_revenu_insee = np.mean(deciles_revenus)
+std_revenu_insee = np.std(deciles_revenus)
 
-    def message(self, x_j, norm):
-        return norm.view(-1, 1) * x_j
+# Génération des valeurs pour la courbe de distribution des revenus basée sur les données INSEE
+frequence_revenus_insee = norm.pdf(revenus, mean_revenu_insee, std_revenu_insee)
 
-    def propagate(self, edge_index, x, norm):
-        row, col = edge_index
-        deg = torch.zeros_like(x[:, 0]).scatter_add_(0, row, norm)
-        deg_inv = deg.pow(-0.5)
-        deg_inv[deg_inv == float('inf')] = 0
-        norm = deg_inv[row] * norm * deg_inv[col]
-        out = torch.zeros_like(x).scatter_add_(0, row, self.message(x[col], norm))
-        return out
+# Normalisation pour que le maximum soit égal à 100
+frequence_revenus_insee = frequence_revenus_insee / max(frequence_revenus_insee) * 100
 
+# Déterminer les limites des tranches de 10% de la population
+percentiles = [norm.ppf(p, mean_revenu_insee, std_revenu_insee) for p in np.arange(0.1, 1.0, 0.1)]
+percentiles.insert(0, norm.ppf(0.0, mean_revenu_insee, std_revenu_insee))
+percentiles.append(norm.ppf(1.0, mean_revenu_insee, std_revenu_insee))
 
-class DiffusionConvGRUCell(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels):
-        super(DiffusionConvGRUCell, self).__init__()
-        self.hidden_channels = hidden_channels
-        self.diffusion_conv = DiffusionConv(in_channels + hidden_channels, 2 * hidden_channels)
+# Plot
+fig, ax1 = plt.subplots(figsize=(14, 8))
 
-    def forward(self, x, edge_index, edge_weight, h):
-        combined = torch.cat([x, h], dim=-1)
-        conv_out = self.diffusion_conv(combined, edge_index, edge_weight)
-        r, u = torch.split(conv_out, self.hidden_channels, dim=-1)
-        r, u = torch.sigmoid(r), torch.sigmoid(u)
+ax1.plot(revenus, taux_imposition * 100, label="Anciennes tranches")  # pourcentage
+ax1.plot(revenus, nouveau_taux_imposition * 100, label="Nouvelles tranches")  # pourcentage
+ax1.plot(revenus, frequence_revenus_insee, label="Fréquence des revenus (INSEE)")  # fréquence des revenus
 
-        conv_out = self.diffusion_conv(torch.cat([x, r * h], dim=-1), edge_index, edge_weight)
-        c = torch.tanh(conv_out)
-        h = u * h + (1 - u) * c
+# Ajouter des couleurs semi-transparentes pour indiquer les tranches de 10% de la population
+for i in range(len(percentiles) - 1):
+    ax1.fill_between(revenus, 0, frequence_revenus_insee, where=(revenus >= percentiles[i]) & (revenus <= percentiles[i + 1]), alpha=0.3, label=f'{int(i*10)}%-{int((i+1)*10)}% de la population')
 
-        return h
+ax1.set_title("Comparaison des taux d'imposition, de la fréquence des revenus et du revenu final en France (jusqu'à 100 000€)")
+ax1.set_xlabel("Revenu (€)")
+ax1.set_ylabel("Taux d'imposition (%) / Fréquence des revenus (%)")
+ax1.legend(loc='upper left')
+ax1.grid(True)
+ax1.set_xlim(0, 100000)
+ax1.set_ylim(0, 100)
 
+# Annotation des nouvelles tranches
+for debut, fin, taux in nouvelles_tranches:
+    if debut <= 100000:
+        ax1.axvline(x=debut, color='grey', linestyle='--', linewidth=0.5)
+        if fin != float('inf') and fin <= 100000:
+            ax1.axvline(x=fin, color='grey', linestyle='--', linewidth=0.5)
 
-class DCRNNEncoder(L.LightningModule):
-    def __init__(self, in_channels, hidden_channels):
-        super(DCRNNEncoder, self).__init__()
-        self.hidden_channels = hidden_channels
-        self.dcgru_cell = DiffusionConvGRUCell(in_channels, hidden_channels)
+# Ajouter un second axe y pour le revenu final
+ax2 = ax1.twinx()
+ax2.plot(revenus, revenu_final_ancien, color='red', label="Revenu final après impôt (Anciennes tranches)")
+ax2.plot(revenus, revenu_final_nouveau, color='blue', label="Revenu final après impôt (Nouvelles tranches)")
+ax2.set_ylabel("Revenu final (€)")
+ax2.legend(loc='upper right')
 
-    def forward(self, x, edge_index, edge_weight):
-        h = torch.zeros(x.size(0), self.hidden_channels, device=x.device)
-        for t in range(x.size(1)):
-            h = self.dcgru_cell(x[:, t], edge_index, edge_weight, h)
-        return h
-
-
-class DCRNNDecoder(L.LightningModule):
-    def __init__(self, out_channels, hidden_channels):
-        super(DCRNNDecoder, self).__init__()
-        self.hidden_channels = hidden_channels
-        self.dcgru_cell = DiffusionConvGRUCell(out_channels, hidden_channels)
-        self.fc = torch.nn.Linear(hidden_channels, out_channels)
-        self.target_length = config.model.target_length
-
-    def forward(self, h, edge_index, edge_weight):
-        predictions = []
-        input = torch.zeros(h.size(0), 1, self.hidden_channels, device=h.device)  # Start with zero input
-
-        for t in range(self.target_length):
-            h = self.dcgru_cell(input, edge_index, edge_weight, h)
-            out = self.fc(h)
-            predictions.append(out.unsqueeze(1))
-            input = out.unsqueeze(1)  # Use the output as the next input
-
-        return torch.cat(predictions, dim=1)
-
-
-class DCRNN(L.LightningModule):
-    def __init__(self, in_channels, hidden_channels, out_channels):
-        super(DCRNN, self).__init__()
-        self.encoder = DCRNNEncoder(in_channels, hidden_channels)
-        self.decoder = DCRNNDecoder(out_channels, hidden_channels)
-
-        self.norm = LayerNorm(hidden_channels)
-        self.dropout = Dropout(p=config.model.dropout_rate)
-
-        self.loss_func = getattr(F, config.model.loss_function)
-        self.activation = getattr(F, config.model.activation)
-        self.save_hyperparameters()
-
-    def forward(self, data):
-        x, edge_index, edge_weight = data.x, data.edge_index, data.edge_attr
-        h = self.encoder(x, edge_index, edge_weight)
-        h = self.activation(h)
-        h = self.norm(h)
-        h = self.dropout(h)
-        out = self.decoder(h, edge_index, edge_weight)
-        return out
+plt.show()
