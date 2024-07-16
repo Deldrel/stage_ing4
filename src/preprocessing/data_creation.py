@@ -95,7 +95,7 @@ def create_csv_files() -> None:
     accessibility_data = pd.read_csv(accessibility_path)
 
     # Process data
-    car_data = car_data.iloc[:5000]  # FIXME: Because of RAM issue, limit the number of rows
+    car_data = car_data.iloc[:30000]  # FIXME: Because of RAM issue, limit the number of rows
     accessibility_data = compute_accessibility_score(accessibility_data)
     wheelchair_data = craft_wheelchair_data(car_data, accessibility_data['accessibility_score'])
 

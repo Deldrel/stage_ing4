@@ -15,9 +15,9 @@
 
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
+    linkcolor=black,
     urlcolor=black,
-    citecolor=blue,
+    citecolor=black,
 }
 
 \begin{document}
@@ -26,25 +26,27 @@
 
     % \onecolumn
 
+    % \tableofcontents
+
     \title{AI and Itinerary Optimisation}
     \author{
         \IEEEauthorblockN{Pierre LAPOLLA}
         \IEEEauthorblockA{
-            \textit{LyRIDS}\\
+            \textit{LyRIDS ECE-Paris}\\
             Paris, France \\
             pierre.lapolla@edu.ece.Fr
         }
         \and
         \IEEEauthorblockN{Guilherme MEDEIROS MACHADO}
         \IEEEauthorblockA{
-            \textit{LyRIDS}\\
+            \textit{LyRIDS ECE-Paris}\\
             Paris, France \\
             gmedeirosmachado@ece.fr
         }
         \and
         \IEEEauthorblockN{Frédéric RAVAUT}
         \IEEEauthorblockA{
-            \textit{LyRIDS}\\
+            \textit{LyRIDS ECE-Paris}\\
             Paris, France \\
             frederic.ravaut@ece.fr
         }
@@ -62,66 +64,39 @@
         Finally, the evaluation of the model is performed through the comparison to a baseline using the Mean Absolute Error (MAE), Mean Absolute Percentage Error (MAPE) and Mean Squared Error (MSE) error metrics.
         The source code is available at \url{https://github.com/Deldrel/stage_ing4}.
     \end{abstract}
-    % \tableofcontents
+
+    \begin{IEEEkeywords}
+        graph neural network, itinerary, wheelchair
+    \end{IEEEkeywords}
 
 
     \section{Introduction}\label{sec:introduction}
-
-    \begin{itemize}
-        \item Clearly state the problem and its significance
-        \item Introduce the specific challenges faced by wheelchair users regarding itinerary planning.
-        \item Briefly mention the proposed solution, DCRNN adaptation, and its potential impact.
-    \end{itemize}
+    \input{sections/introduction}
 
 
     \section{Related Work}\label{sec:related-work}
-
-    \begin{itemize}
-        \item Summarize existing research on itinerary recommendation systems.
-        \item Discuss studies focused on accessibility and wheelchair user mobility.
-        \item Highlight the gap in current research that your paper aims to fill.
-    \end{itemize}
+    \input{sections/related_work}
 
 
-    \section{Methodology}\label{sec:methodology}
-
-    \begin{itemize}
-        \item Detail the adaptation process of the DCRNN model.
-        \item Describe the method used to derive wheelchair traffic data from car traffic datasets.
-        \item Explain the evaluation metrics used (MAE, MAPE, MSE).
-    \end{itemize}
+    \section{Experiments}\label{sec:experiments}
+    \input{sections/experiments}
 
 
     \section{Results}\label{sec:results}
-
-    \begin{itemize}
-        \item Present the results of your model's performance compared to the baseline.
-        \item Use tables and figures to illustrate key findings.
-        \item Discuss the significance of your results in the context of the problem.
-    \end{itemize}
+    \input{sections/results}
 
 
     \section{Discussion}\label{sec:discussion}
-
-    \begin{itemize}
-        \item Interpret the results and their implications.
-        \item Discuss any limitations or unexpected findings.
-        \item Suggest areas for future research.
-    \end{itemize}
+    \input{sections/discussion}
 
 
     \section{Conclusion}\label{sec:conclusion}
-
-    \begin{itemize}
-        \item Summarize the main contributions and findings of your paper.
-        \item Reiterate the significance of addressing accessibility in itinerary planning.
-        \item Highlight the potential impact of your work and suggest future directions.
-    \end{itemize}
+    \input{sections/conclusion}
 
     \section*{Acknowledgment}
     The authors would like to thank Thomas ROUSTAN for their valuable assistance and support during this project.
 
     \bibliographystyle{unsrt}
-    \bibliography{report/references}
+    \bibliography{references}
 
 \end{document}

@@ -31,7 +31,6 @@ class DataModuleConfig(BaseModel):
     batch_size: int = 32
     num_workers: int = 8
     persistent_workers: bool = True
-    training_set_ratio: float = 0.8
 
 
 class ModelConfig(BaseModel):

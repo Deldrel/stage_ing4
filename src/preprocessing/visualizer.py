@@ -127,8 +127,8 @@ def visualize_accessibility_score():
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(wheelchair_yes, wheelchair_no, scores_accessibility_score, cmap='viridis')
     # ax.plot_surface(wheelchair_yes, wheelchair_no, scores_shannon_enthropy, cmap='viridis')
-    ax.set_xlabel('Wheelchair Yes')
-    ax.set_ylabel('Wheelchair No')
+    ax.set_xlabel('# of YES tags')
+    ax.set_ylabel('# of NO tags')
     ax.set_zlabel('Accessibility Score')
     plt.show()
 

@@ -1,0 +1,68 @@
+\subsection{Model Adaptation}\label{subsec:model-adaptation}
+Our approach is heavily based on the DCRNN model~\cite{DCRNN}.
+This model captures the spatial dependency of traffic data using a custom diffusion convolution operation.
+The temporal dependency is captured using Gated Recurrent Units (GRU) where matrix multiplications are replaced by
+the diffusion convolution operation to create a Diffusion Convolution Gated Recurrent Unit (DCGRU).
+We kept the encoder-decoder architecture of the DCRNN, but we modified some of the layers.
+
+\begin{itemize}
+    \item \textbf{DCGRU Cell} : We replace the diffusion convolution operation in the GRU cell by a custom convolution
+    that inherits from the MessagePassing class of the PyTorch Geometric library.
+    \item \textbf{Attention Mechanism} : We added an attention mechanism to the model to allow the model to capture
+    the different locomotion modes tendencies.
+\end{itemize}
+
+\subsection{Data Derivation}\label{subsec:data-derivation}
+Due to a massive lack of wheelchair traffic data, we derive it from car traffic data.
+We use the METR-LA dataset, it contains traffic information collected from loop detectors in the highway of Los Angeles.
+We have data from 207 sensors, measured between March 1st, 2012 and June 30th, 2012 that is aggregated into 5 minutes windows and normalized using Z-Score normalization.
+The graph is a weighted adjacency matrix where the weights represent the distance between the sensors, this matrix is build using thresholded Gaussian kernel\cite{Shuman_2013}.
+
+We use OpenStreetMap~\cite{OpenStreetMap} to get accessibility data for each sensor we have.
+We look in a 500 meters radius around each sensor every accessibility tag (e.g. \textit{yes, limited, no}) and use~\eqref{eq:accessibility_score} to compute an accessibility score for each sensor.
+Where $x$ is the number of \textit{yes} tags and $y$ the number of \textit{no} tags.
+
+\begin{equation}
+    f(x, y) = \frac{x}{x + y} \times \log(x + y + 1)\label{eq:accessibility_score}
+\end{equation}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/accessibility_score_function}
+    \caption{Accessibility score distribution~\eqref{eq:accessibility_score}.}
+    \label{fig:accessibility_score_function}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/map}
+    \caption{
+        Map of the sensors with their accessibility score and 500 meters radius around them.
+        The sensors are colored based on their score, red being the lowest and green the highest.
+        Every black sensor indicates that there is no accessibility data available.
+    }
+    \label{fig:map}
+\end{figure}
+
+We apply a linear transformation to the original traffic data to get values between 0 and 4, where 4 is a value from~\cite{FreedomMobility}.
+We add some noise to the data to slightly change the values and make the model more robust.
+We finally multiply our values by the accessibility score and normalize the data between 0 and 1.
+
+\subsection{Training}\label{subsec:training}
+The implementation uses PyTorch, PyTorch Geometric, PyTorch Lightning and WandB for monitoring.
+We split the data into a training(70\%), validation(10\%) and test(20\%) set.
+The inputs are shaped as follows: (number of samples, number of sensors, sequence length, number of features) e.g. (29977, 207, 12, 4).
+The sequence length is 12, which corresponds to 1 hour of data and the features are:
+
+\begin{itemize}
+    \item speed (in miles per hour)
+    \item hour of the day
+    \item day of the week
+    \item locomotion mode (hot encoded)
+\end{itemize}
+
+The model is evaluated using the Mean Absolute Error (MAE) metric from PyTorch, defined in~\eqref{eq:mae}.
+
+\begin{equation}
+    f(y_i, \hat{y}_i) = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|\label{eq:mae}
+\end{equation}
