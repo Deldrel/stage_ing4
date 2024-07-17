@@ -160,11 +160,10 @@ cython_debug/
 #.idea/
 
 # Add custom ignore below
-data/
 wandb/
 checkpoints/
 lightning_logs/
 models/
 logs/
-
-!data/original/
+data/sequences/
+data/crafted/

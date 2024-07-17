@@ -35,7 +35,7 @@ def create_sequences(dfs: List[pd.DataFrame], verbose: bool = True) -> List[Tupl
 
     for vehicle_type_index, df in enumerate(dfs):
         sensor_data = df.iloc[:, 1:].values
-        sensor_data = map(sensor_data, in_min, in_max, out_min, out_max)
+        # sensor_data = map(sensor_data, in_min, in_max, out_min, out_max)
 
         x = np.memmap(f"temp_x_{vehicle_type_index}.dat", dtype='float32', mode='w+',
                       shape=(number_of_sequences, sequence_length, number_of_sensors, number_of_features + 1))
@@ -84,6 +84,13 @@ def create_sequences(dfs: List[pd.DataFrame], verbose: bool = True) -> List[Tupl
 
 def split_data(x_all, y_all, train_ratio=0.7, val_ratio=0.1, test_ratio=0.2):
     assert train_ratio + val_ratio + test_ratio == 1.0, "The sum of train_ratio, val_ratio, and test_ratio must be 1.0"
+
+    # Shuffle the data
+    indices = np.arange(x_all.shape[0])
+    np.random.shuffle(indices)
+
+    x_all = x_all[indices]
+    y_all = y_all[indices]
 
     total_samples = x_all.shape[0]
     train_end = int(total_samples * train_ratio)

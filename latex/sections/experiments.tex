@@ -1,3 +1,26 @@
+\subsection{Problem definition}\label{subsec:problem-definition}
+
+
+\begin{table}[htbp]
+    \caption{Notations}
+    \center
+    \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{Name}                    & \textbf{Description}         \\
+        \midrule
+        % Problem definition
+        $G$                              & weighted directed graph      \\
+        $N$                              & number of nodes in the graph \\
+        $P$                              & number of features per node  \\
+        $W \in \mathbb{R}^{N \times N} $ & weighted adjacency matrix    \\
+        $X \in \mathbb{R}^{N \times P} $ & node feature matrix          \\
+
+        \bottomrule
+
+    \end{tabular}
+    \label{tab:notations}
+\end{table}
+
 \subsection{Model Adaptation}\label{subsec:model-adaptation}
 Our approach is heavily based on the DCRNN model~\cite{DCRNN}.
 This model captures the spatial dependency of traffic data using a custom diffusion convolution operation.
@@ -21,6 +44,7 @@ The graph is a weighted adjacency matrix where the weights represent the distanc
 We use OpenStreetMap~\cite{OpenStreetMap} to get accessibility data for each sensor we have.
 We look in a 500 meters radius around each sensor every accessibility tag (e.g. \textit{yes, limited, no}) and use~\eqref{eq:accessibility_score} to compute an accessibility score for each sensor.
 Where $x$ is the number of \textit{yes} tags and $y$ the number of \textit{no} tags.
+Equation~\eqref{eq:accessibility_score} allows areas that have more \textit{yes} tags to have a higher score, while also rewarding areas that have more data available.
 
 \begin{equation}
     f(x, y) = \frac{x}{x + y} \times \log(x + y + 1)\label{eq:accessibility_score}
@@ -29,7 +53,7 @@ Where $x$ is the number of \textit{yes} tags and $y$ the number of \textit{no} t
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.5\textwidth]{resources/accessibility_score_function}
-    \caption{Accessibility score distribution~\eqref{eq:accessibility_score}.}
+    \caption{Accessibility score distribution of~\eqref{eq:accessibility_score}.}
     \label{fig:accessibility_score_function}
 \end{figure}
 
@@ -50,7 +74,7 @@ We finally multiply our values by the accessibility score and normalize the data
 
 \subsection{Training}\label{subsec:training}
 The implementation uses PyTorch, PyTorch Geometric, PyTorch Lightning and WandB for monitoring.
-We split the data into a training(70\%), validation(10\%) and test(20\%) set.
+We split the data into a training (70\%), validation (10\%) and test (20\%) set.
 The inputs are shaped as follows: (number of samples, number of sensors, sequence length, number of features) e.g. (29977, 207, 12, 4).
 The sequence length is 12, which corresponds to 1 hour of data and the features are:
 
@@ -64,5 +88,5 @@ The sequence length is 12, which corresponds to 1 hour of data and the features 
 The model is evaluated using the Mean Absolute Error (MAE) metric from PyTorch, defined in~\eqref{eq:mae}.
 
 \begin{equation}
-    f(y_i, \hat{y}_i) = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|\label{eq:mae}
+    f(y, \hat{y}) = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|\label{eq:mae}
 \end{equation}
