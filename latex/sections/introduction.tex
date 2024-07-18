@@ -1,5 +1,25 @@
+The need for itinerary recommendation systems has been significantly met by large platforms like Google Maps, Waze, and Apple Maps.
+They offer a wide range of functionalities, including itineraries for mobility-impaired users.
+However, accurately anticipating travel times for various kind of locomotion modes is still a challenge.
+Additionally, these companies collect private data, raising concerns about user privacy.
+To address these issues, there is a growing need for an open-source model that can provide comprehensive itinerary
+    recommendations for all modes of transportation, including car, bike, wheelchair and walking.
+
+Multi-modal traffic prediction faces multiple challenges:
 \begin{itemize}
-    \item Clearly state the problem and its significance
-    \item Introduce the specific challenges faced by wheelchair users regarding itinerary planning.
-    \item Briefly mention the proposed solution, DCRNN adaptation, and its potential impact.
+    \item \textbf{Data Sources}: Collecting traffic data on multiple modes of transportation in the same area has never been done before.
+    \item \textbf{Modeling}: The model needs to capture both spatial and temporal dependencies of traffic,
+       while also being able to handle multiple modes of transportation.
+    \item \textbf{Scalability}: Accurate real-time traffic prediction over a vast area requires a scalable model.
+\end{itemize}
+
+To demonstrate the feasibility of multi-modal traffic prediction, wa have included wheelchair users as a specific case study.
+As they often faces unique challenges in mobility, such as inaccessible roads or sidewalks.
+By adding this mode of transportation, we highlight the adaptability of our model and make a meaningful social contribution.
+
+This paper proposes an adaptation of the Diffusion Convolutional Recurrent Neural Network (DCRNN) model~\cite{DCRNN} to handle the complexity of multi-modal traffic prediction.
+Our approach includes:
+\begin{itemize}
+    \item \textbf{Model Adaptation}: Enhancing the DCRNN model to take into account multiple locomotion modes, including cars and wheelchairs.
+    \item \textbf{Data Derivation}: Developing a method to derive wheelchair traffic data from car traffic data in the METR-LA dataset.
 \end{itemize}
