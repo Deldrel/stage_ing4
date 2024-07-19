@@ -1,5 +1,26 @@
 \begin{itemize}
-        \item Present the results of your model's performance compared to the baseline.
-        \item Use tables and figures to illustrate key findings.
-        \item Discuss the significance of your results in the context of the problem.
-    \end{itemize}
+    \item Present the results of your model's performance compared to the baseline.
+    \item Use tables and figures to illustrate key findings.
+    \item Discuss the significance of your results in the context of the problem.
+\end{itemize}
+
+The model's performance was evaluated using the MAE, MAPE and RMSE metrics.
+The table~\ref{tab:model_performance_comparison} shows a comparison between our model and the DCRNN baseline.
+The horizon is set to 1 hour (12 time steps).
+
+NOTE: further experiments are in progress to get better comparisons to the baseline, like using other metrics and other horizons.
+
+\begin{table}[htbp]
+    \caption{Model Performance Comparison}
+    \center
+    \begin{tabular}{@{}lllll@{}}
+        \toprule
+        \textbf{Metric} & \textbf{DCRNN (cars)} & \textbf{Cars} & \textbf{Wheelchairs} & \textbf{All} \\
+        \midrule
+        MAE             & 3.60                  & 2.67          & 0.08                 & 6.83         \\
+        MAPE            & 10.5\%                & /             & /                    & /            \\
+        RMSE            & 7.59                  & /             & /                    & /            \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:model_performance_comparison}
+\end{table}
