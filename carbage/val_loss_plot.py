@@ -15,7 +15,7 @@ def plot_loss(arrays: List[Tuple[np.array, str]], normalize: bool = False):
     plt.figure()
     for array, name in arrays:
         plt.plot(array, label=name)
-    plt.title('Normalized Validation History Loss' if normalize else 'Validation History Loss')
+    plt.title('Normalized Validation Loss History' if normalize else 'Validation History Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Normalized MAE' if normalize else 'MAE')
     plt.legend()
