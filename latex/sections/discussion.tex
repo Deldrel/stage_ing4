@@ -14,21 +14,20 @@ The results of our adapted model are promising but also reveal areas that requir
     This confirms the complexity of handling multiple locomotion modes with a single model.
     The increase of the MAE could come from the data and/or the model architecture.
 \end{itemize}
+\vspace{1em}
 
-Our study introduces implications and limitations that come from our methodology.
-\begin{itemize}
-    \item \textbf{Data Derivation}:
-    The approach of deriving wheelchair traffic data from car traffic data adds a new methodology.
-    This derivation may include many biases.
-    Even if this method is innovative, it highlights the need for dedicated data collection targeting other locomotion modes than cars.
-    \item \textbf{Scalability and Real-World Application}:
-    The model's performance over a large dataset (METR-LA) suggests potential scalability.
-    However, the variation in results across different modes of transportation indicates that real-world application will require
-        more complex data handling and possibly the integration of real-time data.
-    \item \textbf{Model Generalization}:
-    While the model performs well on the METR-LA dataset, its generalization to other areas remains untested.
-    Further efforts are needed to evaluate the model across varied datasets.
-\end{itemize}
+A number of limitations and consequences resulting from our research are presented in this paper.
+Data derivation is one important implication.
+Although it offers a new methodology, the process of obtaining wheelchair traffic data from car traffic data may add many biases.
+Even if this method is innovative, it highlights the need for dedicated data collection targeting other locomotion modes than cars.
+Another implication is about scalability and real-world application.
+The model's performance over a large dataset (METR-LA) suggests potential scalability.
+However, the variation in results across different modes of transportation indicates that real-world application will require
+    more complex data handling and possibly the integration of real-time data.
+Lastly, the model generalization is a limitation.
+While the model performs well on the METR-LA dataset, its generalization to other areas remains untested.
+Further efforts are needed to evaluate the model across varied datasets.
+\vspace{1em}
 
 Looking ahead, we propose several directions for future work.
 \begin{itemize}

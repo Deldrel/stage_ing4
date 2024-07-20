@@ -1,25 +1,5 @@
-\subsection{Problem definition}\label{subsec:problem-definition}
-
-
-\begin{table}[htbp]
-    \caption{Notations}
-    \center
-    \begin{tabular}{@{}ll@{}}
-        \toprule
-        \textbf{Name}                    & \textbf{Description}         \\
-        \midrule
-        % Problem definition
-        $G$                              & weighted directed graph      \\
-        $N$                              & number of nodes in the graph \\
-        $P$                              & number of features per node  \\
-        $W \in \mathbb{R}^{N \times N} $ & weighted adjacency matrix    \\
-        $X \in \mathbb{R}^{N \times P} $ & node feature matrix          \\
-
-        \bottomrule
-
-    \end{tabular}
-    \label{tab:notations}
-\end{table}
+%\subsection{Problem definition}\label{subsec:problem-definition}
+%\textcolor{red}{TODO}
 
 \subsection{Model Adaptation}\label{subsec:model-adaptation}
 Our approach is heavily based on the DCRNN model~\cite{DCRNN}.
@@ -30,16 +10,31 @@ We kept the encoder-decoder architecture of the DCRNN, but we modified some of t
 
 \begin{itemize}
     \item \textbf{DCGRU Cell}:
-    We replace the diffusion convolution operation in the GRU cell by a custom convolution that inherits from the MessagePassing class of the PyTorch Geometric library.
+    We replace the diffusion convolution operation in the DCGRU cell by a custom convolution that inherits from the MessagePassing class of the PyTorch Geometric library.
     \item \textbf{Attention Mechanism}:
     We added an attention mechanism to the model to allow the model to capture the different locomotion modes tendencies.
 \end{itemize}
+
+The MessagePassing class is the base of building graph neural networks layers in PyTorch Geometric.
+It allows our model to capture the spatial dependency of the graph traffic data.
+It works by applying a function on features of neighboring nodes and aggregating the results, we use the addition as the aggregation function.
+It then combines the node features with the aggregated results using a fully connected layer to update the node representation.
+
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{resources/model}
+    \caption{
+        Adapted Model Architecture.
+    }
+    \label{fig:model}
+\end{figure*}
 
 \subsection{Data Derivation}\label{subsec:data-derivation}
 Due to a massive lack of wheelchair traffic data, we derive it from car traffic data.
 We use the METR-LA dataset, it contains traffic information collected from loop detectors in the highway of Los Angeles.
 We have data from 207 sensors, measured between March 1st, 2012 and June 30th, 2012 that is aggregated into 5 minutes windows and normalized using Z-Score normalization.
 The graph is a weighted adjacency matrix where the weights represent the distance between the sensors, this matrix is build using thresholded Gaussian kernel\cite{Shuman_2013}.
+\vspace{1em}
 
 We use OpenStreetMap~\cite{OpenStreetMap} to get accessibility data for each sensor we have.
 We look in a 500 meters radius around each sensor every accessibility tag (e.g. \textit{yes, limited, no}) and use~\eqref{eq:accessibility_score} to compute an accessibility score for each sensor.
@@ -56,6 +51,8 @@ Equation~\eqref{eq:accessibility_score} allows areas that have more \textit{yes}
     \caption{Accessibility score distribution of~\eqref{eq:accessibility_score}.}
     \label{fig:accessibility_score_function}
 \end{figure}
+
+%figure*
 
 \begin{figure}[htbp]
     \centering
@@ -85,9 +82,24 @@ The sequence length is 12, which corresponds to 1 hour of data and the features 
     \item day of the week
     \item locomotion mode (hot encoded)
 \end{itemize}
+\vspace{1em}
 
-The model is evaluated using the Mean Absolute Error (MAE) metric from PyTorch, defined in~\eqref{eq:mae}.
+The model is evaluated using three metrics:
+\begin{itemize}
+    \item Mean Absolute Error (MAE)~\eqref{eq:mae}
+    \item Mean Absolute Percentage Error (MAPE)~\eqref{eq:mape}
+    \item Root Mean Squared Error (RMSE)~\eqref{eq:rmse}
+\end{itemize}
+Where $y$ is the ground truth and $\hat{y}$ the prediction.
 
 \begin{equation}
-    f(y, \hat{y}) = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|\label{eq:mae}
+    MAE(y, \hat{y}) = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|\label{eq:mae}
+\end{equation}
+
+\begin{equation}
+    MAPE(y, \hat{y}) = \frac{100}{n} \sum_{i=1}^{n} \left| \frac{y_i - \hat{y}_i}{y_i} \right|\label{eq:mape}
+\end{equation}
+
+\begin{equation}
+    RMSE(y, \hat{y}) = \sqrt{\frac{1}{n} \sum_{i=1}^{n} \left( y_i - \hat{y}_i \right)^2}|\label{eq:rmse}
 \end{equation}
