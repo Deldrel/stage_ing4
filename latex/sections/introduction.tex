@@ -1,9 +1,18 @@
 The need for itinerary recommendation systems has been significantly met by large platforms like Google Maps, Waze, and Apple Maps.
 They offer a wide range of functionalities, including itineraries for mobility-impaired users.
-However, accurately anticipating travel times for various kind of locomotion modes is still a challenge.
+However, if a user needs to get around using a wheelchair, the options are much more limited.
+For instance, any of the broadly known itinerary recommendation systems are capable of computing the time to go somewhere by using solely the wheelchair as transportation mode.
 Additionally, these companies collect private data, raising concerns about user privacy.
 To address these issues, there is a growing need for an open-source model that can provide comprehensive itinerary
     recommendations for all modes of transportation, including car, bike, wheelchair and walking.
+\vspace{1em}
+
+A graph is defined as follows: $G = (V, E)$, where $V$ is the set of nodes and $E$ is the set of edges.
+Graphs allows complex representations of data outside Euclidean space.
+Common Convolutional Neural Networks (CNNs) assume that the data is in a grid-like structure, this works well for images but not for our case.
+As traffic occurs on a road network that can be represented as a graph, we need a Graph Neural Network (GNN).
+These type of neural networks (more details in~\cite{Wu2019A}) allow us to perform complex operations on graph structures.
+These operations enable the capture of spatial and temporal dependencies in the data, which is crucial for a problem like traffic prediction.
 \vspace{1em}
 
 Multi-modal traffic prediction faces multiple challenges.
@@ -14,16 +23,18 @@ Finally, the third challenge is about scalability.
 Scalability is needed for accurate real-time traffic prediction.
 \vspace{1em}
 
-To demonstrate the feasibility of multi-modal traffic prediction, wa have included wheelchair users as a specific case study.
-As they often faces unique challenges in mobility, such as inaccessible roads or sidewalks.
-By adding this mode of transportation, we highlight the adaptability of our model and make a meaningful social contribution.
+To demonstrate the feasibility of multi-modal traffic prediction, we propose a model that can take in consideration cars and wheelchairs as transportation modes.
+Wheelchair users often faces unique challenges in mobility, such as inaccessible roads or sidewalks.
+Given such challenges there is a need for a model that is capable of providing predictions for multiple kinds of transportation including the wheelchairs.
 \vspace{1em}
 
 This paper proposes an adaptation of the Diffusion Convolutional Recurrent Neural Network (DCRNN) model~\cite{DCRNN} to handle the complexity of multi-modal traffic prediction.
+The DCRNN model take temporal sequences of traffic data from the METR-LA dataset~(\ref{subsec:derivation}) and predicts the next sequence.
 Our approach includes:
 \begin{itemize}
     \item \textbf{Model Adaptation}:
-    Enhancing the DCRNN model to take into account multiple locomotion modes, including cars and wheelchairs.
+    Enhancing the DCRNN model to take into account specifically cars and wheelchairs.
     \item \textbf{Data Derivation}:
     Developing a method to derive wheelchair traffic data from car traffic data in the METR-LA dataset.
 \end{itemize}
+\vspace{1em}

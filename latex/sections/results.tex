@@ -1,5 +1,5 @@
-The model's performance was evaluated using the MAE, MAPE and RMSE metrics.
-The table~\ref{tab:model_performance_comparison} shows a comparison between our model and the DCRNN baseline.
+The model's performance was evaluated using the MAE and RMSE metrics.
+Table~\ref{tab:model_performance_comparison} shows a comparison between our model and the DCRNN baseline.
 The horizon is set to 1 hour (12 time steps).
 
 NOTE: further experiments are in progress to get better comparisons to the baseline, like using other metrics and other horizons.
@@ -18,11 +18,11 @@ NOTE: further experiments are in progress to get better comparisons to the basel
     \center
     \begin{tabular}{@{}lllll@{}}
         \toprule
-        \textbf{Metric} & \textbf{DCRNN (cars)} & \textbf{Cars} & \textbf{Wheelchairs} & \textbf{All} \\
+        \textbf{Metric} & \textbf{DCRNN} & \multicolumn{3}{c}{\textbf{Adapted DCRNN}} \\
+        & \textbf{Cars} & \textbf{Cars} & \textbf{Wheelchairs} & \textbf{All} \\
         \midrule
-        MAE             & 3.60                  & 2.67          & 0.08                 & 6.84         \\
-        MAPE            & 10.5\%                & /             & /                    & /            \\
-        RMSE            & 7.59                  & /             & /                    & /            \\
+        MAE  & 3.60          & 2.67          & 0.08                 & 6.84         \\
+        RMSE & 7.59          & 8.59          & 0.18                 & 14.8         \\
         \bottomrule
     \end{tabular}
     \label{tab:model_performance_comparison}
